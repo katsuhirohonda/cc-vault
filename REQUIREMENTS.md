@@ -16,6 +16,9 @@ Claude Codeで発言した内容が様々な場所に散在しているため、
 - **データ形式**: 
   - JSON Lines形式（各行が独立したJSONオブジェクト）
   - フィールド: type, message, uuid, timestamp, parentUuid等
+- **差分検出方法**:
+  - 各メッセージのUUIDで重複チェック
+  - ファイルの最終更新日時を記録して効率化
 
 ### 2. データストレージ
 - **データベース**: Docker上のDuckDB
