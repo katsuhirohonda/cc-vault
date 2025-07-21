@@ -10,7 +10,9 @@ Claude Codeで発言した内容が様々な場所に散在しているため、
 
 ### 1. データ収集
 - **データソース**: `~/.claude/projects/` 配下のJSON Lines (.jsonl)ファイル
-- **収集方法**: PC内の該当ディレクトリを参照し、自動的に全プロジェクトの会話履歴を読み込み
+- **収集方法**: 
+  - **自動インポート**: アプリ起動時に差分検出して新しい会話のみ追加
+  - **手動インポート**: コマンドによる明示的なデータ取り込み
 - **データ形式**: 
   - JSON Lines形式（各行が独立したJSONオブジェクト）
   - フィールド: type, message, uuid, timestamp, parentUuid等
@@ -73,6 +75,11 @@ CREATE INDEX idx_conversations_project ON conversations(project_path);
 ## 使用例
 
 ```bash
+# データインポート
+cc-vault import              # 全データを再インポート（既存データをクリア）
+cc-vault sync                # 差分のみ追加（新しい会話のみ）
+cc-vault import --project /path/to/project  # 特定プロジェクトのみインポート
+
 # キーワード検索
 cc-vault search "Rust error handling"
 
