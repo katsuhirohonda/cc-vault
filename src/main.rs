@@ -3,6 +3,7 @@ mod jsonl_parser;
 mod db_connection;
 mod db_schema;
 mod data_importer;
+mod search;
 
 use anyhow::Result;
 use claude_reader::ClaudeReader;
