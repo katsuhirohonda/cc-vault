@@ -1,5 +1,6 @@
 mod claude_reader;
 mod jsonl_parser;
+mod db_connection;
 
 use anyhow::Result;
 use claude_reader::ClaudeReader;

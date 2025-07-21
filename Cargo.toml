@@ -18,7 +18,7 @@ serde_json = "1.0"
 clap = { version = "4.4", features = ["derive"] }
 
 # Database
-# duckdb = "0.10"  # Temporarily commented due to arrow-arith compilation issue
+# duckdb = { version = "1.1", features = ["bundled"] }  # Temporarily disabled for mock implementation
 
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }
@@ -32,7 +32,7 @@ crossterm = { version = "0.27", optional = true }
 
 [dev-dependencies]
 tempfile = "3.8"
-mockall = "0.12"
+mockall = "0.13"
 
 [features]
 default = []
