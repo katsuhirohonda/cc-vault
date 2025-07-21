@@ -12,6 +12,7 @@ pub struct SearchResult {
     pub project_path: String,
     pub timestamp: DateTime<Utc>,
     pub rank: f64,
+    pub is_favorite: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +28,7 @@ pub struct SearchQuery {
     pub project_filters: Option<Vec<String>>, // For multiple projects
     pub date_from: Option<DateTime<Utc>>,
     pub date_to: Option<DateTime<Utc>>,
+    pub favorites_only: Option<bool>,
     pub limit: Option<usize>,
 }
 
@@ -39,6 +41,7 @@ impl Default for SearchQuery {
             project_filters: None,
             date_from: None,
             date_to: None,
+            favorites_only: None,
             limit: Some(100),
         }
     }
@@ -136,6 +139,7 @@ impl<'a> SearchEngine<'a> {
                             project_path: "/test/project".to_string(),
                             timestamp: Utc::now() - chrono::Duration::days(3), // 3 days ago
                             rank: 0.9,
+                            is_favorite: false,
                         },
                         SearchResult {
                             id: 3,
@@ -146,6 +150,7 @@ impl<'a> SearchEngine<'a> {
                             project_path: "/old/project".to_string(),
                             timestamp: Utc::now() - chrono::Duration::days(2), // 2 days ago
                             rank: 0.85,
+                            is_favorite: false,
                         },
                     ]
                 } else if all_keywords_match {
@@ -159,6 +164,7 @@ impl<'a> SearchEngine<'a> {
                             project_path: "/test/project".to_string(),
                             timestamp: Utc::now() - chrono::Duration::days(10), // 10 days ago
                             rank: 0.8,
+                            is_favorite: false,
                         },
                     ]
                 } else {
@@ -183,6 +189,7 @@ impl<'a> SearchEngine<'a> {
                             project_path: "/test/project".to_string(),
                             timestamp: Utc::now() - chrono::Duration::days(5), // 5 days ago
                             rank: 0.9,
+                            is_favorite: false,
                         },
                     ]
                 } else {
@@ -209,6 +216,13 @@ impl<'a> SearchEngine<'a> {
         } else if let Some(project_filter) = &query.project_filter {
             // Only use single project_filter if project_filters is not set
             results.retain(|result| &result.project_path == project_filter);
+        }
+        
+        // Apply favorites filter
+        if let Some(favorites_only) = query.favorites_only {
+            if favorites_only {
+                results.retain(|result| result.is_favorite);
+            }
         }
         
         Ok(results)
@@ -300,6 +314,24 @@ impl<'a> SearchEngine<'a> {
                 }
             }
         }
+    }
+    
+    pub fn mark_as_favorite(&self, _conversation_id: i64) -> Result<()> {
+        if !self.connection.is_connected() {
+            return Err(anyhow!("Database not connected"));
+        }
+        
+        // Mock implementation
+        Ok(())
+    }
+    
+    pub fn unmark_as_favorite(&self, _conversation_id: i64) -> Result<()> {
+        if !self.connection.is_connected() {
+            return Err(anyhow!("Database not connected"));
+        }
+        
+        // Mock implementation
+        Ok(())
     }
 }
 
@@ -393,6 +425,7 @@ mod tests {
             project_path: "/path".to_string(),
             timestamp: Utc::now(),
             rank: 0.5,
+            is_favorite: false,
         };
         
         let result2 = result1.clone();
@@ -477,6 +510,7 @@ mod tests {
                 project_path: "/path1".to_string(),
                 timestamp: Utc::now(),
                 rank: 0.5,
+                is_favorite: false,
             },
             SearchResult {
                 id: 2,
@@ -487,6 +521,7 @@ mod tests {
                 project_path: "/path2".to_string(),
                 timestamp: Utc::now(),
                 rank: 0.9,
+                is_favorite: true,
             },
             SearchResult {
                 id: 3,
@@ -497,6 +532,7 @@ mod tests {
                 project_path: "/path3".to_string(),
                 timestamp: Utc::now(),
                 rank: 0.7,
+                is_favorite: false,
             },
         ];
         
@@ -921,5 +957,177 @@ mod tests {
         for result in &results4 {
             assert!(result.project_path == "" || result.project_path == "/test/project");
         }
+    }
+
+    #[test]
+    fn test_mark_as_favorite() {
+        let mut mock_conn = MockDatabaseConnection::new();
+        
+        mock_conn.expect_is_connected()
+            .times(1)
+            .returning(|| true);
+        
+        let search_engine = SearchEngine::new(&mock_conn);
+        
+        // Test marking a conversation as favorite
+        let result = search_engine.mark_as_favorite(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mark_as_favorite_when_not_connected() {
+        let mut mock_conn = MockDatabaseConnection::new();
+        
+        mock_conn.expect_is_connected()
+            .times(1)
+            .returning(|| false);
+        
+        let search_engine = SearchEngine::new(&mock_conn);
+        
+        // Should fail when not connected
+        let result = search_engine.mark_as_favorite(1);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Database not connected"));
+    }
+
+    #[test]
+    fn test_unmark_as_favorite() {
+        let mut mock_conn = MockDatabaseConnection::new();
+        
+        mock_conn.expect_is_connected()
+            .times(1)
+            .returning(|| true);
+        
+        let search_engine = SearchEngine::new(&mock_conn);
+        
+        // Test unmarking a conversation as favorite
+        let result = search_engine.unmark_as_favorite(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_unmark_as_favorite_when_not_connected() {
+        let mut mock_conn = MockDatabaseConnection::new();
+        
+        mock_conn.expect_is_connected()
+            .times(1)
+            .returning(|| false);
+        
+        let search_engine = SearchEngine::new(&mock_conn);
+        
+        // Should fail when not connected
+        let result = search_engine.unmark_as_favorite(1);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Database not connected"));
+    }
+
+    #[test]
+    fn test_list_all_favorites() {
+        let mut mock_conn = MockDatabaseConnection::new();
+        
+        mock_conn.expect_is_connected()
+            .times(1)
+            .returning(|| true);
+        
+        let search_engine = SearchEngine::new(&mock_conn);
+        
+        // Create a query to find only favorites
+        let query = SearchQuery {
+            keywords: vec![],
+            mode: SearchMode::And,
+            favorites_only: Some(true),
+            ..Default::default()
+        };
+        
+        let results = search_engine.search(&query);
+        assert!(results.is_ok());
+        let results = results.unwrap();
+        
+        // With our mock data, all have is_favorite = false, so should be empty
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_search_with_favorites_filter_and_keywords() {
+        let mut mock_conn = MockDatabaseConnection::new();
+        
+        mock_conn.expect_is_connected()
+            .times(3)
+            .returning(|| true);
+        
+        let search_engine = SearchEngine::new(&mock_conn);
+        
+        // Test 1: Search for favorites only
+        let query = SearchQuery {
+            keywords: vec!["test".to_string()],
+            mode: SearchMode::And,
+            favorites_only: Some(true),
+            ..Default::default()
+        };
+        
+        let results = search_engine.search(&query);
+        assert!(results.is_ok());
+        let results = results.unwrap();
+        
+        // All our mock data has is_favorite = false, so should be empty
+        assert_eq!(results.len(), 0);
+        
+        // Test 2: Search with favorites_only = false (should return all results)
+        let query2 = SearchQuery {
+            keywords: vec!["test".to_string()],
+            mode: SearchMode::And,
+            favorites_only: Some(false),
+            ..Default::default()
+        };
+        
+        let results2 = search_engine.search(&query2);
+        assert!(results2.is_ok());
+        let results2 = results2.unwrap();
+        assert!(results2.len() > 0); // Should have results
+        
+        // Test 3: Search with favorites_only = None (should return all results)
+        let query3 = SearchQuery {
+            keywords: vec!["test".to_string()],
+            mode: SearchMode::And,
+            favorites_only: None,
+            ..Default::default()
+        };
+        
+        let results3 = search_engine.search(&query3);
+        assert!(results3.is_ok());
+        let results3 = results3.unwrap();
+        assert!(results3.len() > 0); // Should have results
+    }
+
+    #[test]
+    fn test_favorites_with_multiple_filters() {
+        let mut mock_conn = MockDatabaseConnection::new();
+        
+        mock_conn.expect_is_connected()
+            .times(1)
+            .returning(|| true);
+        
+        let search_engine = SearchEngine::new(&mock_conn);
+        
+        // Combine favorites filter with date range and project filter
+        let start_date = Utc::now() - chrono::Duration::days(7);
+        let end_date = Utc::now();
+        
+        let query = SearchQuery {
+            keywords: vec!["test".to_string()],
+            mode: SearchMode::And,
+            project_filter: Some("/test/project".to_string()),
+            date_from: Some(start_date),
+            date_to: Some(end_date),
+            favorites_only: Some(true),
+            ..Default::default()
+        };
+        
+        let results = search_engine.search(&query);
+        assert!(results.is_ok());
+        let results = results.unwrap();
+        
+        // Should be empty since all mock data has is_favorite = false
+        assert_eq!(results.len(), 0);
     }
 }
