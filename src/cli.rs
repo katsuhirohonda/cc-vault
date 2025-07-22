@@ -6,6 +6,9 @@ use crate::db_connection::DatabaseConnection;
 use crate::data_importer::DataImporter;
 use crate::search::{SearchEngine, SearchQuery, SearchMode};
 
+#[cfg(feature = "tui")]
+use crate::tui::run_tui;
+
 #[cfg(test)]
 use crate::db_connection::MockDatabaseConnection;
 
@@ -70,6 +73,10 @@ pub enum Commands {
         #[arg(short, long)]
         remove: bool,
     },
+    
+    /// Launch interactive TUI mode
+    #[cfg(feature = "tui")]
+    Tui,
 }
 
 impl Cli {
@@ -104,6 +111,10 @@ impl Cli {
             }
             Commands::Favorite { id, remove } => {
                 self.execute_favorite(connection, *id, *remove)
+            }
+            #[cfg(feature = "tui")]
+            Commands::Tui => {
+                run_tui(connection)
             }
         }
     }
@@ -404,5 +415,22 @@ mod tests {
         assert!(err_str.contains("--mode"));
         assert!(err_str.contains("--project"));
         assert!(err_str.contains("--favorites"));
+    }
+    
+    #[cfg(feature = "tui")]
+    #[test]
+    fn test_parse_tui_command() {
+        let args = vec!["cc-vault", "tui"];
+        let cli = Cli::try_parse_from(args);
+        
+        assert!(cli.is_ok());
+        let cli = cli.unwrap();
+        
+        match cli.command {
+            Commands::Tui => {
+                // TUI command parsed successfully
+            }
+            _ => panic!("Expected Tui command"),
+        }
     }
 }
