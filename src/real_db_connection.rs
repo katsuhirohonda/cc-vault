@@ -70,6 +70,10 @@ impl DatabaseConnection for RealDuckDBConnection {
         
         Ok(())
     }
+    
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 // Extended connection with query support

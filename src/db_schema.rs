@@ -2,9 +2,13 @@ use anyhow::{anyhow, Result};
 use crate::db_connection::DatabaseConnection;
 
 #[allow(dead_code)]
+pub const CREATE_CONVERSATIONS_SEQUENCE: &str = 
+    "CREATE SEQUENCE IF NOT EXISTS conversations_id_seq START 1";
+
+#[allow(dead_code)]
 pub const CREATE_CONVERSATIONS_TABLE: &str = r#"
 CREATE TABLE IF NOT EXISTS conversations (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY DEFAULT nextval('conversations_id_seq'),
     uuid TEXT NOT NULL UNIQUE,
     parent_uuid TEXT,
     session_id TEXT NOT NULL,
@@ -90,6 +94,9 @@ impl<'a> SchemaManager<'a> {
             return Err(anyhow!("Database not connected"));
         }
 
+        // Create sequence first
+        self.connection.execute(CREATE_CONVERSATIONS_SEQUENCE)?;
+        
         // Create main table
         self.connection.execute(CREATE_CONVERSATIONS_TABLE)?;
         

@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
 use crate::db_connection::DatabaseConnection;
 use crate::jsonl_parser::ClaudeMessage;
+use crate::real_db_connection::ExtendedDatabaseConnection;
 
 #[allow(dead_code)]
 pub const INSERT_CONVERSATION: &str = r#"
@@ -97,14 +98,27 @@ impl<'a> DataImporter<'a> {
         Ok(())
     }
 
-    pub fn check_uuid_exists(&self, _uuid: &str) -> Result<bool> {
+    pub fn check_uuid_exists(&self, uuid: &str) -> Result<bool> {
         if !self.connection.is_connected() {
             return Err(anyhow!("Database not connected"));
         }
 
-        // For now, we'll always return false since we can't query with current trait
-        // TODO: Extend DatabaseConnection trait to support queries
-        Ok(false)
+        // Check if the connection is RealDuckDBConnection which implements ExtendedDatabaseConnection
+        if let Some(extended_conn) = self.connection.as_any().downcast_ref::<crate::real_db_connection::RealDuckDBConnection>() {
+            let query = format!(
+                "SELECT COUNT(*) as count FROM conversations WHERE uuid = '{}'",
+                Self::escape_sql_string(uuid)
+            );
+            
+            let count: Option<i32> = extended_conn.query_row(&query, |row| {
+                Ok(row.get(0)?)
+            })?;
+            
+            Ok(count.unwrap_or(0) > 0)
+        } else {
+            // Fallback: always return false if extended connection not available
+            Ok(false)
+        }
     }
 
     pub fn update_conversation(&self, message: &ClaudeMessage, project_path: &str) -> Result<()> {
@@ -118,18 +132,18 @@ impl<'a> DataImporter<'a> {
 
         let query = format!(
             "UPDATE conversations SET parent_uuid = {}, session_id = '{}', user_type = '{}', message_type = '{}', message_role = {}, message_content = {}, project_path = '{}', cwd = '{}', git_branch = {}, version = '{}', timestamp = '{}', updated_at = CURRENT_TIMESTAMP WHERE uuid = '{}'",
-            message.parent_uuid.as_ref().map(|s| format!("'{}'", s)).unwrap_or("NULL".to_string()),
-            message.session_id,
-            message.user_type,
-            message.message_type,
-            message.message.role.as_ref().map(|s| format!("'{}'", s)).unwrap_or("NULL".to_string()),
-            message_content.as_ref().map(|s| format!("'{}'", s)).unwrap_or("NULL".to_string()),
-            project_path,
-            message.cwd,
-            message.git_branch.as_ref().map(|s| format!("'{}'", s)).unwrap_or("NULL".to_string()),
-            message.version,
-            message.timestamp.to_rfc3339(),
-            message.uuid
+            message.parent_uuid.as_ref().map(|s| format!("'{}'", Self::escape_sql_string(s))).unwrap_or("NULL".to_string()),
+            Self::escape_sql_string(&message.session_id),
+            Self::escape_sql_string(&message.user_type),
+            Self::escape_sql_string(&message.message_type),
+            message.message.role.as_ref().map(|s| format!("'{}'", Self::escape_sql_string(s))).unwrap_or("NULL".to_string()),
+            message_content.as_ref().map(|s| format!("'{}'", Self::escape_sql_string(s))).unwrap_or("NULL".to_string()),
+            Self::escape_sql_string(project_path),
+            Self::escape_sql_string(&message.cwd),
+            message.git_branch.as_ref().map(|s| format!("'{}'", Self::escape_sql_string(s))).unwrap_or("NULL".to_string()),
+            Self::escape_sql_string(&message.version),
+            Self::escape_sql_string(&message.timestamp.to_rfc3339()),
+            Self::escape_sql_string(&message.uuid)
         );
 
         self.connection.execute(&query)?;
@@ -137,12 +151,26 @@ impl<'a> DataImporter<'a> {
     }
 
     pub fn import_with_duplicate_check(&self, message: &ClaudeMessage, project_path: &str) -> Result<ImportAction> {
+        // Check if UUID already exists
         if self.check_uuid_exists(&message.uuid)? {
+            // UUID exists, update the conversation
             self.update_conversation(message, project_path)?;
             Ok(ImportAction::Updated)
         } else {
-            self.import_single_conversation(message, project_path)?;
-            Ok(ImportAction::Inserted)
+            // UUID doesn't exist, insert new conversation
+            match self.import_single_conversation(message, project_path) {
+                Ok(_) => Ok(ImportAction::Inserted),
+                Err(e) => {
+                    // If it's still a duplicate key error (race condition), try to update
+                    if e.to_string().contains("Duplicate key") {
+                        self.update_conversation(message, project_path)?;
+                        Ok(ImportAction::Updated)
+                    } else {
+                        // Re-throw other errors
+                        Err(e)
+                    }
+                }
+            }
         }
     }
 

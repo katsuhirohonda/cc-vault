@@ -11,6 +11,12 @@ pub trait DatabaseConnection: Send + Sync {
     fn is_connected(&self) -> bool;
     #[allow(dead_code)]
     fn execute(&self, query: &str) -> Result<()>;
+    
+    // Enable downcasting to extended connections
+    fn as_any(&self) -> &dyn std::any::Any {
+        // Default implementation returns a dummy Any
+        &()
+    }
 }
 
 #[derive(Clone)]
