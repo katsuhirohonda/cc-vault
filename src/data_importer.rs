@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use crate::db_connection::DatabaseConnection;
 use crate::jsonl_parser::ClaudeMessage;
 
+#[allow(dead_code)]
 pub const INSERT_CONVERSATION: &str = r#"
 INSERT INTO conversations (
     uuid, parent_uuid, session_id, user_type, message_type, 
@@ -11,8 +12,10 @@ INSERT INTO conversations (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 "#;
 
+#[allow(dead_code)]
 pub const CHECK_UUID_EXISTS: &str = "SELECT COUNT(*) as count FROM conversations WHERE uuid = ?";
 
+#[allow(dead_code)]
 pub const UPDATE_CONVERSATION: &str = r#"
 UPDATE conversations SET 
     parent_uuid = ?, session_id = ?, user_type = ?, message_type = ?,
@@ -21,6 +24,7 @@ UPDATE conversations SET
 WHERE uuid = ?
 "#;
 
+#[allow(dead_code)]
 pub const GET_LAST_UPDATE_TIME: &str = 
     "SELECT MAX(timestamp) as last_update FROM conversations WHERE project_path = ?";
 
@@ -150,6 +154,7 @@ impl<'a> DataImporter<'a> {
         Ok(stats)
     }
 
+    #[allow(dead_code)]
     pub fn get_last_update_time(&self, _project_path: &str) -> Result<Option<DateTime<Utc>>> {
         if !self.connection.is_connected() {
             return Err(anyhow!("Database not connected"));
@@ -161,6 +166,7 @@ impl<'a> DataImporter<'a> {
 }
 
 #[derive(Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum ImportAction {
     Inserted,
     Updated,

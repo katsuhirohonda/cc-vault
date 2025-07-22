@@ -12,6 +12,7 @@ pub trait DatabaseConnection: Send + Sync {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct ConnectionConfig {
     pub host: String,
     pub port: u16,
@@ -32,11 +33,13 @@ impl Default for ConnectionConfig {
     }
 }
 
+#[allow(dead_code)]
 pub struct DuckDBConnector {
     config: ConnectionConfig,
     connected: Arc<Mutex<bool>>,
 }
 
+#[allow(dead_code)]
 impl DuckDBConnector {
     pub fn new(config: ConnectionConfig) -> Self {
         Self {
@@ -105,11 +108,13 @@ impl DatabaseConnection for DuckDBConnector {
     }
 }
 
+#[allow(dead_code)]
 pub struct ConnectionPool {
     connections: Vec<Arc<dyn DatabaseConnection>>,
     max_connections: usize,
 }
 
+#[allow(dead_code)]
 impl ConnectionPool {
     pub fn new(max_connections: usize) -> Self {
         Self {

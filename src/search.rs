@@ -47,6 +47,7 @@ impl Default for SearchQuery {
     }
 }
 
+#[allow(dead_code)]
 pub const SEARCH_FTS_SIMPLE: &str = r#"
 SELECT 
     c.id,
@@ -64,6 +65,7 @@ ORDER BY rank DESC
 LIMIT ?
 "#;
 
+#[allow(dead_code)]
 pub const SEARCH_FTS_AND: &str = r#"
 SELECT 
     c.id,
@@ -81,6 +83,7 @@ ORDER BY rank DESC
 LIMIT ?
 "#;
 
+#[allow(dead_code)]
 pub const SEARCH_FTS_OR: &str = r#"
 SELECT 
     c.id,
