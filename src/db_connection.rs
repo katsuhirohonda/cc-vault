@@ -6,8 +6,10 @@ use tokio::time::sleep;
 #[cfg_attr(test, mockall::automock)]
 pub trait DatabaseConnection: Send + Sync {
     fn connect(&self) -> Result<()>;
+    #[allow(dead_code)]
     fn disconnect(&self) -> Result<()>;
     fn is_connected(&self) -> bool;
+    #[allow(dead_code)]
     fn execute(&self, query: &str) -> Result<()>;
 }
 

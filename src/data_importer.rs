@@ -28,6 +28,7 @@ WHERE uuid = ?
 pub const GET_LAST_UPDATE_TIME: &str = 
     "SELECT MAX(timestamp) as last_update FROM conversations WHERE project_path = ?";
 
+#[allow(dead_code)]
 pub struct ImportStats {
     pub inserted: usize,
     pub updated: usize,
@@ -35,6 +36,7 @@ pub struct ImportStats {
     pub errors: usize,
 }
 
+#[allow(dead_code)]
 impl ImportStats {
     pub fn new() -> Self {
         Self {
@@ -59,6 +61,7 @@ impl<'a> DataImporter<'a> {
         Self { connection }
     }
 
+    #[allow(dead_code)]
     pub fn import_single_conversation(&self, message: &ClaudeMessage, project_path: &str) -> Result<()> {
         if !self.connection.is_connected() {
             return Err(anyhow!("Database not connected"));
@@ -91,6 +94,7 @@ impl<'a> DataImporter<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn check_uuid_exists(&self, _uuid: &str) -> Result<bool> {
         if !self.connection.is_connected() {
             return Err(anyhow!("Database not connected"));
@@ -100,6 +104,7 @@ impl<'a> DataImporter<'a> {
         Ok(false)
     }
 
+    #[allow(dead_code)]
     pub fn update_conversation(&self, message: &ClaudeMessage, project_path: &str) -> Result<()> {
         if !self.connection.is_connected() {
             return Err(anyhow!("Database not connected"));
@@ -129,6 +134,7 @@ impl<'a> DataImporter<'a> {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn import_with_duplicate_check(&self, message: &ClaudeMessage, project_path: &str) -> Result<ImportAction> {
         if self.check_uuid_exists(&message.uuid)? {
             self.update_conversation(message, project_path)?;
@@ -139,6 +145,7 @@ impl<'a> DataImporter<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn bulk_import(&self, messages: &[ClaudeMessage], project_path: &str) -> Result<ImportStats> {
         let mut stats = ImportStats::new();
 
