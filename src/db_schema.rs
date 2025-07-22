@@ -76,12 +76,10 @@ pub const DROP_CONVERSATIONS_TABLE: &str = "DROP TABLE IF EXISTS conversations";
 #[allow(dead_code)]
 pub const DROP_FTS_TABLE: &str = "DROP TABLE IF EXISTS conversations_fts";
 
-#[allow(dead_code)]
 pub struct SchemaManager<'a> {
     connection: &'a dyn DatabaseConnection,
 }
 
-#[allow(dead_code)]
 impl<'a> SchemaManager<'a> {
     pub fn new(connection: &'a dyn DatabaseConnection) -> Self {
         Self { connection }

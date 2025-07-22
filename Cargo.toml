@@ -18,7 +18,7 @@ serde_json = "1.0"
 clap = { version = "4.4", features = ["derive"] }
 
 # Database
-# duckdb = { version = "1.1", features = ["bundled"] }  # Temporarily disabled for mock implementation
+duckdb = { version = "1.3", features = ["bundled"] }
 
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }

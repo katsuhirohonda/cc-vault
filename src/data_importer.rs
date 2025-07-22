@@ -60,8 +60,11 @@ impl<'a> DataImporter<'a> {
     pub fn new(connection: &'a dyn DatabaseConnection) -> Self {
         Self { connection }
     }
+    
+    fn escape_sql_string(s: &str) -> String {
+        s.replace('\'', "''")
+    }
 
-    #[allow(dead_code)]
     pub fn import_single_conversation(&self, message: &ClaudeMessage, project_path: &str) -> Result<()> {
         if !self.connection.is_connected() {
             return Err(anyhow!("Database not connected"));
@@ -75,18 +78,18 @@ impl<'a> DataImporter<'a> {
         // In a real implementation, we'd use prepared statements
         let query = format!(
             "INSERT INTO conversations (uuid, parent_uuid, session_id, user_type, message_type, message_role, message_content, project_path, cwd, git_branch, version, timestamp, is_favorite) VALUES ('{}', {}, '{}', '{}', '{}', {}, {}, '{}', '{}', {}, '{}', '{}', {})",
-            message.uuid,
-            message.parent_uuid.as_ref().map(|s| format!("'{}'", s)).unwrap_or("NULL".to_string()),
-            message.session_id,
-            message.user_type,
-            message.message_type,
-            message.message.role.as_ref().map(|s| format!("'{}'", s)).unwrap_or("NULL".to_string()),
-            message_content.as_ref().map(|s| format!("'{}'", s)).unwrap_or("NULL".to_string()),
-            project_path,
-            message.cwd,
-            message.git_branch.as_ref().map(|s| format!("'{}'", s)).unwrap_or("NULL".to_string()),
-            message.version,
-            message.timestamp.to_rfc3339(),
+            Self::escape_sql_string(&message.uuid),
+            message.parent_uuid.as_ref().map(|s| format!("'{}'", Self::escape_sql_string(s))).unwrap_or("NULL".to_string()),
+            Self::escape_sql_string(&message.session_id),
+            Self::escape_sql_string(&message.user_type),
+            Self::escape_sql_string(&message.message_type),
+            message.message.role.as_ref().map(|s| format!("'{}'", Self::escape_sql_string(s))).unwrap_or("NULL".to_string()),
+            message_content.as_ref().map(|s| format!("'{}'", Self::escape_sql_string(s))).unwrap_or("NULL".to_string()),
+            Self::escape_sql_string(project_path),
+            Self::escape_sql_string(&message.cwd),
+            message.git_branch.as_ref().map(|s| format!("'{}'", Self::escape_sql_string(s))).unwrap_or("NULL".to_string()),
+            Self::escape_sql_string(&message.version),
+            Self::escape_sql_string(&message.timestamp.to_rfc3339()),
             false
         );
 
@@ -94,17 +97,16 @@ impl<'a> DataImporter<'a> {
         Ok(())
     }
 
-    #[allow(dead_code)]
     pub fn check_uuid_exists(&self, _uuid: &str) -> Result<bool> {
         if !self.connection.is_connected() {
             return Err(anyhow!("Database not connected"));
         }
 
-        // Mock implementation - in real implementation we'd query the database
+        // For now, we'll always return false since we can't query with current trait
+        // TODO: Extend DatabaseConnection trait to support queries
         Ok(false)
     }
 
-    #[allow(dead_code)]
     pub fn update_conversation(&self, message: &ClaudeMessage, project_path: &str) -> Result<()> {
         if !self.connection.is_connected() {
             return Err(anyhow!("Database not connected"));
@@ -134,7 +136,6 @@ impl<'a> DataImporter<'a> {
         Ok(())
     }
 
-    #[allow(dead_code)]
     pub fn import_with_duplicate_check(&self, message: &ClaudeMessage, project_path: &str) -> Result<ImportAction> {
         if self.check_uuid_exists(&message.uuid)? {
             self.update_conversation(message, project_path)?;

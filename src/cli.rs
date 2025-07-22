@@ -119,15 +119,87 @@ impl Cli {
         }
     }
     
-    fn execute_import(&self, connection: &dyn DatabaseConnection, project: Option<&str>, _force: bool) -> Result<()> {
-        let _reader = ClaudeReader::new()?;
-        let _parser = JsonlParser::new();
-        let _importer = DataImporter::new(connection);
+    fn execute_import(&self, connection: &dyn DatabaseConnection, project: Option<&str>, force: bool) -> Result<()> {
+        let reader = ClaudeReader::new()?;
+        let parser = JsonlParser::new();
+        let importer = DataImporter::new(connection);
         
-        // For now, just return Ok - full implementation to follow
-        println!("Importing conversations...");
-        if let Some(proj) = project {
-            println!("Project: {}", proj);
+        println!("Importing conversations from Claude Code...");
+        
+        // Check if Claude projects directory exists
+        if !reader.check_directory_exists() {
+            return Err(anyhow::anyhow!("Claude projects directory not found at ~/.claude/projects"));
+        }
+        
+        // Find all JSONL files
+        let jsonl_files = reader.find_jsonl_files()?;
+        
+        if jsonl_files.is_empty() {
+            println!("No conversation files found.");
+            return Ok(());
+        }
+        
+        println!("Found {} conversation files", jsonl_files.len());
+        
+        let mut total_imported = 0;
+        let mut total_errors = 0;
+        
+        for jsonl_path in jsonl_files {
+            // Get project name from path
+            let project_name = reader.get_project_name_from_path(&jsonl_path)
+                .unwrap_or_else(|| "unknown".to_string());
+            
+            // Skip if specific project is requested and this isn't it
+            if let Some(proj) = project {
+                if project_name != proj {
+                    continue;
+                }
+            }
+            
+            println!("\nProcessing project: {}", project_name);
+            
+            // Read file content
+            let content = std::fs::read_to_string(&jsonl_path)?;
+            
+            // Parse messages
+            let parse_results = parser.parse_multiple_messages_skip_errors(&content);
+            
+            let mut project_imported = 0;
+            let mut project_errors = 0;
+            
+            for (line_num, result) in parse_results {
+                match result {
+                    Ok(message) => {
+                        // Import message
+                        match if force {
+                            importer.import_single_conversation(&message, &project_name)
+                        } else {
+                            importer.import_with_duplicate_check(&message, &project_name)
+                                .map(|_| ())
+                        } {
+                            Ok(_) => project_imported += 1,
+                            Err(e) => {
+                                eprintln!("  Error importing line {}: {}", line_num, e);
+                                project_errors += 1;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("  Error parsing line {}: {}", line_num, e);
+                        project_errors += 1;
+                    }
+                }
+            }
+            
+            println!("  Imported: {}, Errors: {}", project_imported, project_errors);
+            total_imported += project_imported;
+            total_errors += project_errors;
+        }
+        
+        println!("\nImport complete!");
+        println!("Total imported: {}", total_imported);
+        if total_errors > 0 {
+            println!("Total errors: {}", total_errors);
         }
         
         Ok(())

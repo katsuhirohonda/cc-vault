@@ -3,12 +3,10 @@ use dirs::home_dir;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-#[allow(dead_code)]
 pub struct ClaudeReader {
     claude_projects_path: PathBuf,
 }
 
-#[allow(dead_code)]
 impl ClaudeReader {
     pub fn new() -> Result<Self> {
         let home = home_dir().context("Failed to get home directory")?;
