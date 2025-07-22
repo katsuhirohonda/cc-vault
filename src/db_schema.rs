@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use crate::db_connection::DatabaseConnection;
 
+#[allow(dead_code)]
 pub const CREATE_CONVERSATIONS_TABLE: &str = r#"
 CREATE TABLE IF NOT EXISTS conversations (
     id INTEGER PRIMARY KEY,
@@ -21,18 +22,23 @@ CREATE TABLE IF NOT EXISTS conversations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )"#;
 
+#[allow(dead_code)]
 pub const CREATE_UUID_INDEX: &str = 
     "CREATE INDEX IF NOT EXISTS idx_conversations_uuid ON conversations(uuid)";
 
+#[allow(dead_code)]
 pub const CREATE_SESSION_INDEX: &str = 
     "CREATE INDEX IF NOT EXISTS idx_conversations_session ON conversations(session_id)";
 
+#[allow(dead_code)]
 pub const CREATE_TIMESTAMP_INDEX: &str = 
     "CREATE INDEX IF NOT EXISTS idx_conversations_timestamp ON conversations(timestamp)";
 
+#[allow(dead_code)]
 pub const CREATE_PROJECT_INDEX: &str = 
     "CREATE INDEX IF NOT EXISTS idx_conversations_project ON conversations(project_path)";
 
+#[allow(dead_code)]
 pub const CREATE_FTS_INDEX: &str = r#"
 CREATE VIRTUAL TABLE IF NOT EXISTS conversations_fts USING fts5(
     uuid UNINDEXED,
@@ -41,6 +47,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS conversations_fts USING fts5(
     content_rowid=id
 )"#;
 
+#[allow(dead_code)]
 pub const CREATE_FTS_TRIGGERS: &str = r#"
 CREATE TRIGGER IF NOT EXISTS conversations_fts_insert 
 AFTER INSERT ON conversations 
@@ -64,13 +71,17 @@ BEGIN
 END;
 "#;
 
+#[allow(dead_code)]
 pub const DROP_CONVERSATIONS_TABLE: &str = "DROP TABLE IF EXISTS conversations";
+#[allow(dead_code)]
 pub const DROP_FTS_TABLE: &str = "DROP TABLE IF EXISTS conversations_fts";
 
+#[allow(dead_code)]
 pub struct SchemaManager<'a> {
     connection: &'a dyn DatabaseConnection,
 }
 
+#[allow(dead_code)]
 impl<'a> SchemaManager<'a> {
     pub fn new(connection: &'a dyn DatabaseConnection) -> Self {
         Self { connection }

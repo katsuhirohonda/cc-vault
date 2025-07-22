@@ -32,6 +32,7 @@ pub struct MessageContent {
 
 pub struct JsonlParser;
 
+#[allow(dead_code)]
 impl JsonlParser {
     pub fn new() -> Self {
         Self

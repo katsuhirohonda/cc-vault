@@ -244,6 +244,7 @@ impl<'a> SearchEngine<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn search_simple(&self, keyword: &str) -> Result<Vec<SearchResult>> {
         let query = SearchQuery {
             keywords: vec![keyword.to_string()],
@@ -253,6 +254,7 @@ impl<'a> SearchEngine<'a> {
         self.search(&query)
     }
 
+    #[allow(dead_code)]
     pub fn search_multiple_and(&self, keywords: Vec<String>) -> Result<Vec<SearchResult>> {
         let query = SearchQuery {
             keywords,
@@ -262,6 +264,7 @@ impl<'a> SearchEngine<'a> {
         self.search(&query)
     }
 
+    #[allow(dead_code)]
     pub fn search_multiple_or(&self, keywords: Vec<String>) -> Result<Vec<SearchResult>> {
         let query = SearchQuery {
             keywords,
@@ -271,12 +274,14 @@ impl<'a> SearchEngine<'a> {
         self.search(&query)
     }
 
+    #[allow(dead_code)]
     pub fn rank_results(&self, mut results: Vec<SearchResult>) -> Vec<SearchResult> {
         // Sort by rank in descending order (highest rank first)
         results.sort_by(|a, b| b.rank.partial_cmp(&a.rank).unwrap_or(std::cmp::Ordering::Equal));
         results
     }
     
+    #[allow(dead_code)]
     pub fn parse_relative_date(&self, relative_date: &str) -> Result<DateTime<Utc>> {
         let now = Utc::now();
         let relative_date_lower = relative_date.to_lowercase();
