@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
 use crate::db_connection::DatabaseConnection;
+use crate::real_db_connection::{ExtendedDatabaseConnection, RealDuckDBConnection};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SearchResult {

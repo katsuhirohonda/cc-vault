@@ -44,41 +44,19 @@ pub const CREATE_PROJECT_INDEX: &str =
 
 #[allow(dead_code)]
 pub const CREATE_FTS_INDEX: &str = r#"
-CREATE VIRTUAL TABLE IF NOT EXISTS conversations_fts USING fts5(
-    uuid UNINDEXED,
-    message_content,
-    content=conversations,
-    content_rowid=id
-)"#;
+-- DuckDB doesn't support FTS5, we'll use standard indexes for now
+CREATE INDEX IF NOT EXISTS idx_conversations_content ON conversations(message_content)
+"#;
 
 #[allow(dead_code)]
 pub const CREATE_FTS_TRIGGERS: &str = r#"
-CREATE TRIGGER IF NOT EXISTS conversations_fts_insert 
-AFTER INSERT ON conversations 
-BEGIN
-    INSERT INTO conversations_fts(rowid, uuid, message_content) 
-    VALUES (new.id, new.uuid, new.message_content);
-END;
-
-CREATE TRIGGER IF NOT EXISTS conversations_fts_delete 
-AFTER DELETE ON conversations 
-BEGIN
-    DELETE FROM conversations_fts WHERE rowid = old.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS conversations_fts_update 
-AFTER UPDATE ON conversations 
-BEGIN
-    DELETE FROM conversations_fts WHERE rowid = old.id;
-    INSERT INTO conversations_fts(rowid, uuid, message_content) 
-    VALUES (new.id, new.uuid, new.message_content);
-END;
+-- No triggers needed for basic text search
 "#;
 
 #[allow(dead_code)]
 pub const DROP_CONVERSATIONS_TABLE: &str = "DROP TABLE IF EXISTS conversations";
 #[allow(dead_code)]
-pub const DROP_FTS_TABLE: &str = "DROP TABLE IF EXISTS conversations_fts";
+pub const DROP_FTS_TABLE: &str = "-- No FTS table to drop";
 
 pub struct SchemaManager<'a> {
     connection: &'a dyn DatabaseConnection,

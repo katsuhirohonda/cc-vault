@@ -47,6 +47,8 @@ fn main() -> Result<()> {
         // Initialize schema if needed
         let schema_manager = crate::db_schema::SchemaManager::new(&conn);
         schema_manager.create_schema()?;
+        // Create FTS indexes for search functionality
+        schema_manager.create_fts_indexes()?;
         
         // Execute command
         cli.execute(&conn)?;
